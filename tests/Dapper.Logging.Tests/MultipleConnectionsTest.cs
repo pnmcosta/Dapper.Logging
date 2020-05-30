@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Linq;
 using Dapper.Logging.Configuration;
 using Dapper.Logging.Tests.Infra;
 using FluentAssertions;
@@ -14,9 +15,9 @@ namespace Dapper.Logging.Tests
         [Fact]
         public void Should_support_multiple_connections()
         {
-            var logger = new TestLogger<IDbConnectionFactory>();
+            var loggerFactory = new TestLoggerFactory();
             var services = new ServiceCollection()
-                .AddSingleton<ILogger<IDbConnectionFactory>>(logger);
+                .AddSingleton<ILoggerFactory>(loggerFactory);
             
             var con1 = Substitute.For<DbConnection>();
             var con2 = Substitute.For<DbConnection>();
@@ -25,7 +26,7 @@ namespace Dapper.Logging.Tests
             services.AddTransient<IConnectionFactory1>(prv =>
                 new ConnectionFactory1(
                     new ContextlessLoggingFactory(
-                        prv.GetRequiredService<ILogger<IDbConnectionFactory>>(),
+                        prv.GetRequiredService<ILoggerFactory>(),
                         new DbLoggingConfigurationBuilder(),
                         () => con1)));
 
@@ -33,7 +34,7 @@ namespace Dapper.Logging.Tests
             services.AddTransient<IConnectionFactory2>(prv =>
                 new ConnectionFactory2(
                     new ContextlessLoggingFactory(
-                        prv.GetRequiredService<ILogger<IDbConnectionFactory>>(),
+                        prv.GetRequiredService<ILoggerFactory>(),
                         new DbLoggingConfigurationBuilder(),
                         () => con2)));
             
@@ -49,7 +50,8 @@ namespace Dapper.Logging.Tests
             //Asserts
             con1.Received().Open();
             con2.Received().Open();
-            logger.Messages.Should().HaveCount(2);
+            loggerFactory.Loggers.Values.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages.Should().HaveCount(2);
         }
     }
     

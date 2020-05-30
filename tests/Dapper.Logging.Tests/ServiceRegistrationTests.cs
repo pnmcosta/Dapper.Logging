@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Linq;
 using Dapper.Logging.Configuration;
 using Dapper.Logging.Tests.Infra;
 using FluentAssertions;
@@ -14,10 +15,10 @@ namespace Dapper.Logging.Tests
         [Fact]
         public void Fluent_api_registration_should_work()
         {
-            var logger = new TestLogger<IDbConnectionFactory>();
+            var loggerFactory = new TestLoggerFactory();
             var innerConnection = Substitute.For<DbConnection>();
             var services = new ServiceCollection()
-                .AddSingleton<ILogger<IDbConnectionFactory>>(logger);
+                .AddSingleton<ILoggerFactory>(loggerFactory);
 
             services.AddDbConnectionFactory(
                 prv => innerConnection,
@@ -30,17 +31,18 @@ namespace Dapper.Logging.Tests
             var connection = factory.CreateConnection();
             connection.Open();
             innerConnection.Received().Open();
-            logger.Messages.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages.Should().HaveCount(1);
         }
         
         [Fact]
         public void Manual_creation_of_builder_should_work()
         {
-            var logger = new TestLogger<IDbConnectionFactory>();
+            var loggerFactory = new TestLoggerFactory();
             var innerConnection = Substitute.For<DbConnection>();
             var services = new ServiceCollection()
-                .AddSingleton<ILogger<IDbConnectionFactory>>(logger);
-            
+                .AddSingleton<ILoggerFactory>(loggerFactory);
+
             services.AddDbConnectionFactory( 
                 prv => innerConnection,
                 x => new DbLoggingConfigurationBuilder //discard arg and create a new one
@@ -56,17 +58,18 @@ namespace Dapper.Logging.Tests
             var connection = factory.CreateConnection();
             connection.Open();
             innerConnection.Received().Open();
-            logger.Messages.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages.Should().HaveCount(1);
         }
         
         [Fact]
         public void Null_delegate_builder_should_work()
         {
-            var logger = new TestLogger<IDbConnectionFactory>();
+            var loggerFactory = new TestLoggerFactory();
             var innerConnection = Substitute.For<DbConnection>();
             var services = new ServiceCollection()
-                .AddSingleton<ILogger<IDbConnectionFactory>>(logger);
-            
+                .AddSingleton<ILoggerFactory>(loggerFactory);
+
             services.AddDbConnectionFactory(prv => innerConnection);
 
             var provider = services.BuildServiceProvider();
@@ -75,17 +78,18 @@ namespace Dapper.Logging.Tests
             var connection = factory.CreateConnection();
             connection.Open();
             innerConnection.Received().Open();
-            logger.Messages.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages.Should().HaveCount(1);
         }
         
         [Fact]
         public void Delegate_returning_null_should_work()
         {
-            var logger = new TestLogger<IDbConnectionFactory>();
+            var loggerFactory = new TestLoggerFactory();
             var innerConnection = Substitute.For<DbConnection>();
             var services = new ServiceCollection()
-                .AddSingleton<ILogger<IDbConnectionFactory>>(logger);
-            
+                .AddSingleton<ILoggerFactory>(loggerFactory);
+
             services.AddDbConnectionFactory(
                 prv => innerConnection,
                 _ => null);
@@ -96,7 +100,8 @@ namespace Dapper.Logging.Tests
             var connection = factory.CreateConnection();
             connection.Open();
             innerConnection.Received().Open();
-            logger.Messages.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages.Should().HaveCount(1);
         }
     }
 }

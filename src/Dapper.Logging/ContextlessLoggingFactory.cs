@@ -12,21 +12,11 @@ namespace Dapper.Logging
         private readonly WrappedConnectionFactory<Empty> _factory;
         
         public ContextlessLoggingFactory(
-            ILogger<IDbConnectionFactory> logger, 
+            ILoggerFactory loggerFactory, 
             DbLoggingConfiguration config, 
             Func<DbConnection> factory)
         {
-            _hooks = new LoggingHook<Empty>(logger, config);
-            _factory = new WrappedConnectionFactory<Empty>(factory);
-        }
-        
-        [Obsolete]
-        public ContextlessLoggingFactory(
-            ILogger<DbConnection> logger, 
-            DbLoggingConfiguration config, 
-            Func<DbConnection> factory)
-        {
-            _hooks = new LoggingHook<Empty>(logger, config);
+            _hooks = new LoggingHook<Empty>(loggerFactory, config);
             _factory = new WrappedConnectionFactory<Empty>(factory);
         }
         

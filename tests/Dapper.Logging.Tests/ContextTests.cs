@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.Linq;
 using Dapper.Logging.Configuration;
 using Dapper.Logging.Tests.Infra;
 using FluentAssertions;
@@ -15,10 +16,10 @@ namespace Dapper.Logging.Tests
         [Fact]
         public void Should_pass_extra_context_to_log_messages()
         {
-            var logger = new TestLogger<IDbConnectionFactory<Context>>();
+            var loggerFactory = new TestLoggerFactory();
             var innerConnection = Substitute.For<DbConnection>();
             var services = new ServiceCollection()
-                .AddSingleton<ILogger<IDbConnectionFactory<Context>>>(logger);
+                .AddSingleton<ILoggerFactory>(loggerFactory);
 
             services.AddDbConnectionFactoryWithCtx<Context>(
                 prv => innerConnection,
@@ -34,17 +35,18 @@ namespace Dapper.Logging.Tests
             
             //assert
             innerConnection.Received().Open();
-            logger.Messages.Should().HaveCount(1);
-            logger.Messages[0].State["@context"].Should().Be(ctx);
+            loggerFactory.Loggers.Values.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages[0].State["@context"].Should().Be(ctx);
         }
         
         [Fact]
         public void Should_pass_anonymous_context_to_log_messages()
         {
-            var logger = new TestLogger<IDbConnectionFactory<object>>();
+            var loggerFactory = new TestLoggerFactory();
             var innerConnection = Substitute.For<DbConnection>();
             var services = new ServiceCollection()
-                .AddSingleton<ILogger<IDbConnectionFactory<object>>>(logger);
+                .AddSingleton<ILoggerFactory>(loggerFactory);
 
             services.AddDbConnectionFactoryWithCtx<object>(
                 prv => innerConnection,
@@ -60,18 +62,19 @@ namespace Dapper.Logging.Tests
             
             //assert
             innerConnection.Received().Open();
-            logger.Messages.Should().HaveCount(1);
-            logger.Messages[0].State["@context"].Should().Be(ctx);
+            loggerFactory.Loggers.Values.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages[0].State["@context"].Should().Be(ctx);
         }
         
         [Fact]
         public void Should_pass_connection_to_log_messages()
         {
-            var logger = new TestLogger<IDbConnectionFactory<Context>>();
+            var loggerFactory = new TestLoggerFactory();
             var innerConnection = Substitute.For<DbConnection>();
             innerConnection.DataSource.Returns("source123");
             var services = new ServiceCollection()
-                .AddSingleton<ILogger<IDbConnectionFactory<Context>>>(logger);
+                .AddSingleton<ILoggerFactory>(loggerFactory);
 
             services.AddDbConnectionFactoryWithCtx<Context>(
                 prv => innerConnection,
@@ -88,10 +91,11 @@ namespace Dapper.Logging.Tests
             
             //assert
             innerConnection.Received().Open();
-            logger.Messages.Should().HaveCount(1);
-            logger.Messages[0].State.Should().ContainKey("@connection");
-            logger.Messages[0].State["@connection"].Should()
-                .BeEquivalentTo(new {DataSource = "source123"});
+            loggerFactory.Loggers.Values.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages.Should().HaveCount(1);
+            loggerFactory.Loggers.Values.First().Messages[0].State.Should().ContainKey("@connection");
+            loggerFactory.Loggers.Values.First().Messages[0].State["@connection"].Should()
+                        .BeEquivalentTo(new {DataSource = "source123"});
             
         }
     }

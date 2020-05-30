@@ -8,27 +8,27 @@ namespace Dapper.Logging
 {
     internal class LoggingHook<T> : ISqlHooks<T>
     {
-        private readonly ILogger _logger;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly DbLoggingConfiguration _config;
         private readonly Func<DbConnection, object> _connectionProjector;
 
-        public LoggingHook(ILogger logger, DbLoggingConfiguration config)
+        public LoggingHook(ILoggerFactory loggerFactory, DbLoggingConfiguration config)
         {
-            _logger = logger;
+            _loggerFactory = loggerFactory;
             _config = config;
             _connectionProjector = _config.ConnectionProjector ?? (_ => Empty.Object);
         }
 
-        public void ConnectionOpened(DbConnection connection, T context, double elapsedMs) => 
-            _logger.Log(
+        public void ConnectionOpened(DbConnection connection, T context, double elapsedMs) =>
+            GetLogger(connection).Log(
                 _config.LogLevel, 
                 _config.OpenConnectionMessage,
                 elapsedMs,
                 context,
                 _connectionProjector(connection));
 
-        public void ConnectionClosed(DbConnection connection, T context, double elapsedMs) => 
-            _logger.Log(
+        public void ConnectionClosed(DbConnection connection, T context, double elapsedMs) =>
+            GetLogger(connection).Log(
                 _config.LogLevel, 
                 _config.CloseConnectionMessage, 
                 elapsedMs,
@@ -36,7 +36,7 @@ namespace Dapper.Logging
                 _connectionProjector(connection));
 
         public void CommandExecuted(DbCommand command, T context, double elapsedMs) =>
-            _logger.Log(
+            GetLogger(command).Log(
                 _config.LogLevel, 
                 _config.ExecuteQueryMessage, 
                 command.CommandText,
@@ -44,5 +44,10 @@ namespace Dapper.Logging
                 elapsedMs,
                 context,
                 _connectionProjector(command.Connection));
+
+        private ILogger GetLogger(object value)
+        {
+            return _loggerFactory.CreateLogger(value.GetType());
+        }
     }
 }

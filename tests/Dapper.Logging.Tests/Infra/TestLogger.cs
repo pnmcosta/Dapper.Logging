@@ -5,9 +5,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Dapper.Logging.Tests.Infra
 {
-    public class TestLogger<T> : ILogger<T>
+    public class TestLogger: ILogger
     {
+       
         public List<LogMessage> Messages { get; } = new List<LogMessage>();
+        public string CategoryName { get; }
+
+        public TestLogger(string categoryName)
+        {
+            CategoryName = categoryName;
+        }
 
         public void Log<TState>(
             LogLevel logLevel, 
