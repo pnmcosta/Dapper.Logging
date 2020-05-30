@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using Dapper.Logging.Configuration;
@@ -109,7 +107,7 @@ namespace Dapper.Logging.Tests
         }
 
         [Fact]
-        public void Should_log_distinct_categories_for_queries_and_connection()
+        public void Should_log_with_distinct_categories()
         {
             var loggerFactory = new TestLoggerFactory();
             var innerConnection = Substitute.For<DbConnection>();
@@ -148,5 +146,6 @@ namespace Dapper.Logging.Tests
             loggerFactory.Loggers.Values.Last().CategoryName.Should().Be("Dapper.Logging.Hooks.WrappedCommand");
             loggerFactory.Loggers.Values.Last().Messages.Should().HaveCount(1);
         }
+
     }
 }
